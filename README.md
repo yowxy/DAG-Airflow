@@ -129,11 +129,27 @@ Pipeline diatur dalam file DAG bernama <code>etl_air_quality_indonesia</code> ya
 </tr>
 <tr>
 <td>generate_visualizations.py</td>
-<td>Script otomatisasi pembuatan 5 grafik visualisasi data kualitas udara.</td>
+<td>Script otomatisasi pembuatan 5 grafik visualisasi data kualitas udara langsung dari database.</td>
+</tr>
+<tr>
+<td>query_warehouse.py</td>
+<td>CLI script untuk memeriksa status data warehouse dan menjalankan kueri SQL langsung dari terminal.</td>
+</tr>
+<tr>
+<td>data/processed/air_quality_warehouse.db</td>
+<td>Berkas basis data relasional SQLite Data Warehouse lokal (terintegrasi langsung di folder proyek).</td>
 </tr>
 </table>
 
-<h2>5. Skema Tabel Data Warehouse PostgreSQL</h2>
+<h2>5. Skema dan Arsitektur Data Warehouse (Dual-Engine: PostgreSQL & SQLite)</h2>
+<p>
+Sistem ini mengimplementasikan integrasi basis data ganda (Dual-Engine Warehouse) secara bersamaan:
+</p>
+<ul>
+  <li><b>Server Data Warehouse (PostgreSQL):</b> Berjalan di Docker container dan dapat diakses dari host pada <code>localhost:5433</code> (Database: <code>airflow</code>, User: <code>airflow</code>, Password: <code>airflow</code>).</li>
+  <li><b>Berkas Data Warehouse Lokal (SQLite):</b> Disimpan langsung di <code>data/processed/air_quality_warehouse.db</code> sehingga proyek di folder ini dapat langsung diakses, dikueri, dan dianalisis menggunakan tools lokal (VS Code SQLite viewer, DBeaver, script Python) tanpa ketergantungan jaringan.</li>
+</ul>
+<p>Tabel 1: air_quality_daily (Tabel Fakta Kualitas Udara Harian)</p>
 <p>Tabel 1: air_quality_daily (Tabel Fakta Kualitas Udara Harian)</p>
 <table border="1" cellpadding="8" cellspacing="0">
 <tr>

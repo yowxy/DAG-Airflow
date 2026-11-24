@@ -140,6 +140,7 @@ def load_data_to_warehouse():
     df = pd.read_csv(clean_path)
     summary_df = pd.read_csv(summary_path)
 
+    # 1. Pemuatan ke PostgreSQL Data Warehouse (Server Database Klaster Airflow)
     db_url = sqlalchemy.engine.URL.create(
         drivername="postgresql+psycopg",
         username="airflow",
@@ -163,10 +164,35 @@ def load_data_to_warehouse():
         if_exists="replace",
         index=False,
     )
-    print("Load berhasil: data harian dan agregasi termuat di PostgreSQL.")
+
+    # 2. Pemuatan ke Database Warehouse Berkas Lokal (SQLite di data/processed/)
+    sqlite_path = os.path.join(out_dir, "air_quality_warehouse.db")
+    sqlite_engine = sqlalchemy.create_engine(f"sqlite:///{sqlite_path}")
+    df.to_sql(
+        name="air_quality_daily",
+        con=sqlite_engine,
+        if_exists="replace",
+        index=False,
+        chunksize=5000,
+    )
+    summary_df.to_sql(
+        name="air_quality_province_summary",
+        con=sqlite_engine,
+        if_exists="replace",
+        index=False,
+    )
+
+    print(f"Load berhasil: data termuat di PostgreSQL & file database lokal ({sqlite_path}).")
     return len(df)
 
 def verify_warehouse_data():
+    base_dir = os.path.join(os.sep, "opt", "airflow", "data")
+    out_dir = os.path.join(base_dir, "processed")
+    if not os.path.exists(out_dir):
+        out_dir = os.path.join("data", "processed")
+    sqlite_path = os.path.join(out_dir, "air_quality_warehouse.db")
+
+    # 1. Verifikasi PostgreSQL Warehouse
     db_url = sqlalchemy.engine.URL.create(
         drivername="postgresql+psycopg",
         username="airflow",
@@ -196,14 +222,21 @@ def verify_warehouse_data():
         samples = sample_res.fetchall()
 
     if daily_count == 0:
-        raise ValueError("Tabel air_quality_daily kosong di warehouse")
+        raise ValueError("Tabel air_quality_daily kosong di PostgreSQL warehouse")
     if summary_count == 0:
-        raise ValueError("Tabel air_quality_province_summary kosong di warehouse")
+        raise ValueError("Tabel air_quality_province_summary kosong di PostgreSQL warehouse")
 
-    print(f"Verifikasi sukses: {daily_count} baris di tabel air_quality_daily.")
-    print(
-        f"Verifikasi sukses: {summary_count} baris di tabel air_quality_province_summary."
-    )
+    # 2. Verifikasi SQLite Lokal di Folder
+    sqlite_engine = sqlalchemy.create_engine(f"sqlite:///{sqlite_path}")
+    with sqlite_engine.connect() as conn:
+        sqlite_daily = conn.execute(sqlalchemy.text("SELECT COUNT(1) FROM air_quality_daily")).scalar()
+        sqlite_summary = conn.execute(sqlalchemy.text("SELECT COUNT(1) FROM air_quality_province_summary")).scalar()
+
+    if sqlite_daily != daily_count:
+        raise ValueError(f"Inkonsistensi data: PostgreSQL ({daily_count}) != SQLite ({sqlite_daily})")
+
+    print(f"Verifikasi sukses PostgreSQL: {daily_count} baris daily, {summary_count} baris summary.")
+    print(f"Verifikasi sukses File Database Lokal: {sqlite_daily} baris daily, {sqlite_summary} baris summary.")
     for sample in samples:
         print(f"Sample data: {sample}")
     return daily_count

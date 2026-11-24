@@ -21,11 +21,20 @@ plt.rcParams['figure.autolayout'] = True
 OUTPUT_DIR = 'reports/figures'
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
-# 1. Load Data
-df_clean = pd.read_csv('data/processed/clean_air_quality_daily.csv')
-df_sum = pd.read_csv('data/processed/air_quality_province_summary.csv')
+# 1. Load Data Langsung dari Database Warehouse (SQL Query)
+import sqlite3
+db_path = 'data/processed/air_quality_warehouse.db'
+if not os.path.exists(db_path):
+    raise FileNotFoundError(f"Database warehouse tidak ditemukan di {db_path}")
 
-print(f"Total baris data bersih: {len(df_clean):,}")
+conn = sqlite3.connect(db_path)
+df_clean = pd.read_sql_query('SELECT * FROM air_quality_daily', conn)
+df_sum = pd.read_sql_query('SELECT * FROM air_quality_province_summary', conn)
+conn.close()
+
+print(f"Koneksi Database Sukses: {db_path}")
+print(f"Total baris diekstrak dari tabel air_quality_daily: {len(df_clean):,}")
+print(f"Total baris diekstrak dari tabel air_quality_province_summary: {len(df_sum):,}")
 
 # ==============================================================================
 # GRAFIK 1: Distribusi Status Kualitas Udara Nasional (Donut Chart)
