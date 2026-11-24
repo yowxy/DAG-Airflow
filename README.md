@@ -119,6 +119,18 @@ Pipeline diatur dalam file DAG bernama <code>etl_air_quality_indonesia</code> ya
 <td>.env</td>
 <td>Konfigurasi environment variable UID sistem (AIRFLOW_UID=1000).</td>
 </tr>
+<tr>
+<td>notebooks/</td>
+<td>Menyimpan Jupyter Notebook analisis eksploratif data (eda_air_quality.ipynb).</td>
+</tr>
+<tr>
+<td>reports/figures/</td>
+<td>Menyimpan artefak visualisasi grafik hasil analisis (format PNG 300 DPI).</td>
+</tr>
+<tr>
+<td>generate_visualizations.py</td>
+<td>Script otomatisasi pembuatan 5 grafik visualisasi data kualitas udara.</td>
+</tr>
 </table>
 
 <h2>5. Skema Tabel Data Warehouse PostgreSQL</h2>
@@ -315,3 +327,45 @@ Pipeline diatur dalam file DAG bernama <code>etl_air_quality_indonesia</code> ya
 <td>Imputasi nilai kosong berhasil menyelesaikan 31 anomali AQI tanpa kehilangan observasi.</td>
 </tr>
 </table>
+
+
+<h2>8. Exploratory Data Analysis (EDA) dan Visualisasi Data</h2>
+<p>
+Untuk melengkapi luaran projek, analisis eksploratif dan visualisasi data telah diotomatisasi melalui skrip <code>generate_visualizations.py</code> serta didokumentasikan interaktif dalam <code>notebooks/eda_air_quality.ipynb</code>.
+</p>
+
+<table border=1 cellpadding=8 cellspacing=0>
+<tr>
+<th>File Grafik</th>
+<th>Judul Visualisasi</th>
+<th>Temuan Kunci</th>
+</tr>
+<tr>
+<td>01_distribusi_kategori_aqi.png</td>
+<td>Proporsi Status Kualitas Udara Nasional (Donut Chart)</td>
+<td>Mayoritas udara Indonesia berstatus Sedang (56,0%) dan Baik (27,4%), dengan 16,6% berada pada kategori Tidak Sehat hingga Berbahaya.</td>
+</tr>
+<tr>
+<td>02_top_provinsi_aqi.png</td>
+<td>5 Provinsi Paling Berpolusi vs 5 Provinsi Terbersih (Bar Chart)</td>
+<td>Disparitas tajam antara DKI Jakarta (AQI 153,5 - Sangat Berpolusi) dan Papua Barat Daya (AQI 32,8 - Sangat Sehat).</td>
+</tr>
+<tr>
+<td>03_persentase_pelanggaran_who_per_pulau.png</td>
+<td>Pelampauan Batas Aman Standar WHO per Pulau (Bar Chart)</td>
+<td>Pulau Jawa menjadi episentrum krisis udara dengan 88,9% hari melampaui batas aman WHO (PM2.5 > 15 µg/m³), berbanding jauh dengan Papua (2,8%).</td>
+</tr>
+<tr>
+<td>04_tren_tahunan_aqi_pm25.png</td>
+<td>Tren Kenaikan Polusi Udara Tahunan 2022–2026 (Line Chart)</td>
+<td>Terjadi kenaikan bertahap pada konsentrasi polutan PM2.5 dan US AQI dari tahun 2022 hingga 2026.</td>
+</tr>
+<tr>
+<td>05_pola_musiman_polusi_bulanan.png</td>
+<td>Pola Musiman Polusi: Kemarau vs Hujan (Line Chart)</td>
+<td>Konsentrasi polutan memuncak drastis selama musim kemarau (Juni–Oktober) akibat rendahnya presipitasi curah hujan.</td>
+</tr>
+</table>
+
+<p>Perintah untuk memperbarui/menghasilkan seluruh visualisasi secara mandiri:</p>
+<pre><code>python3 generate_visualizations.py</code></pre>
