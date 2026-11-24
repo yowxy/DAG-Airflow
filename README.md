@@ -283,21 +283,47 @@ Pipeline diatur dalam file DAG bernama <code>etl_air_quality_indonesia</code> ya
 </table>
 
 <h2>6. Panduan Menjalankan Sistem</h2>
-<p>Langkah 1: Menjalankan Klaster Airflow Menggunakan Docker Compose</p>
+
+<p>Langkah 1: Konfigurasi Environment Variable (Linux)</p>
+<p>Pastikan file <code>.env</code> sudah memuat User ID sistem lokal agar izin akses folder (permissions) sinkron antara host dan container:</p>
+<pre><code>echo -e "AIRFLOW_UID=$(id -u)" > .env</code></pre>
+
+<p>Langkah 2: Mengunduh Image Docker (Pull Image)</p>
+<p>Unduh seluruh image resmi (Apache Airflow 3.4.0, PostgreSQL 16, Redis 7.2) ke komputer lokal terlebih dahulu untuk memastikan kestabilan koneksi dan memantau progres unduhan:</p>
+<pre><code>docker compose pull</code></pre>
+
+<p>Langkah 3: Inisialisasi Database dan Akun Administrator Airflow</p>
+<p>Jalankan container inisialisasi untuk melakukan migrasi skema database metadata dan membuat kredensial admin default:</p>
+<pre><code>docker compose up airflow-init</code></pre>
+
+<p>Langkah 4: Menjalankan Seluruh Klaster Layanan di Latar Belakang (Detached Mode)</p>
 <pre><code>docker compose up -d</code></pre>
 
-<p>Langkah 2: Memverifikasi Status Layanan Container</p>
+<p>Langkah 5: Memverifikasi Status Kesehatan Layanan Container</p>
+<p>Pastikan seluruh kontainer (scheduler, worker, apiserver, postgres, redis, dag-processor, triggerer) berstatus <code>Up</code> atau <code>healthy</code>:</p>
 <pre><code>docker compose ps</code></pre>
 
-<p>Langkah 3: Mengaktifkan (Unpause) DAG di Airflow</p>
-<pre><code>docker exec projectuas-airflow-worker-1 airflow dags unpause etl_air_quality_indonesia</code></pre>
+<p>Langkah 6: Mengakses Airflow Web UI (Opsional)</p>
+<p>Visualisasi DAG, status eksekusi task, dan log dapat dipantau langsung melalui antarmuka web peramban di <b><a href="http://localhost:8080">http://localhost:8080</a></b><br>
+Kredensial login default:<br>
+- <b>Username:</b> <code>airflow</code><br>
+- <b>Password:</b> <code>airflow</code></p>
 
-<p>Langkah 4: Menjalankan Eksekusi DAG Secara Manual</p>
-<pre><code>docker exec projectuas-airflow-worker-1 airflow dags trigger etl_air_quality_indonesia</code></pre>
+<p>Langkah 7: Mengaktifkan (Unpause) DAG di Airflow</p>
+<pre><code>docker compose exec airflow-worker airflow dags unpause etl_air_quality_indonesia</code></pre>
 
-<p>Langkah 5: Memeriksa Hasil Output File dan Data Warehouse</p>
+<p>Langkah 8: Menjalankan Eksekusi DAG Secara Manual (Trigger)</p>
+<pre><code>docker compose exec airflow-worker airflow dags trigger etl_air_quality_indonesia</code></pre>
+
+<p>Langkah 9: Memeriksa Hasil Output File dan Data Warehouse</p>
+<p>Memverifikasi file CSV hasil olahan data pipeline:</p>
 <pre><code>ls -la data/processed/</code></pre>
-<pre><code>docker exec projectuas-airflow-worker-1 python -c "import sqlalchemy; engine = sqlalchemy.create_engine('postgresql+psycopg://airflow:airflow@postgres/airflow'); conn = engine.connect(); print('Daily rows:', conn.execute(sqlalchemy.text('SELECT COUNT(1) FROM air_quality_daily;')).scalar()); print('Summary rows:', conn.execute(sqlalchemy.text('SELECT COUNT(1) FROM air_quality_province_summary;')).scalar()); conn.close()"</code></pre>
+<p>Memverifikasi jumlah baris data tersimpan di PostgreSQL Data Warehouse:</p>
+<pre><code>docker compose exec airflow-worker python -c "import sqlalchemy; engine = sqlalchemy.create_engine('postgresql+psycopg://airflow:airflow@postgres/airflow'); conn = engine.connect(); print('Daily rows:', conn.execute(sqlalchemy.text('SELECT COUNT(1) FROM air_quality_daily;')).scalar()); print('Summary rows:', conn.execute(sqlalchemy.text('SELECT COUNT(1) FROM air_quality_province_summary;')).scalar()); conn.close()"</code></pre>
+
+<p>Langkah 10: Menghentikan Klaster Layanan (Clean Up)</p>
+<p>Jika pengujian atau evaluasi pipeline telah selesai, seluruh layanan container dapat dihentikan menggunakan perintah:</p>
+<pre><code>docker compose down</code></pre>
 
 <h2>7. Hasil Validasi dan Karakteristik Data Engineering</h2>
 <table border="1" cellpadding="8" cellspacing="0">
